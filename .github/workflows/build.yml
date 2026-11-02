@@ -67,10 +67,13 @@ jobs:
       - name: Collect artifacts
         shell: pwsh
         run: |
+          # 统一成 ASCII 文件名，避免 GitHub 把中文名/空格替换成 default.md、Plain.Craft....
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item "Plain Craft Launcher 2\bin\Plain Craft Launcher 2.exe" dist\ -Force
+          Copy-Item "Plain Craft Launcher 2\bin\Plain Craft Launcher 2.exe" "dist\PCL-Steam-Link.exe" -Force
           Copy-Item "PCLink\steam_appid.txt" dist\ -Force -ErrorAction SilentlyContinue
-          if (Test-Path "说明.md") { Copy-Item "说明.md" dist\ -Force }
+          if (Test-Path "说明.md") { Copy-Item "说明.md" "dist\usage-zh.md" -Force }
+          Copy-Item "README.md" "dist\README.md" -Force
+          Get-ChildItem dist | Select-Object Name, Length
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -87,9 +90,9 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/Plain Craft Launcher 2.exe
-            说明.md
-            README.md
+            dist/PCL-Steam-Link.exe
+            dist/usage-zh.md
+            dist/README.md
           body: |
             ## PCL Steam 联机修改版 ${{ github.ref_name }}
 
