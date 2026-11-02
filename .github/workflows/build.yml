@@ -5,8 +5,12 @@ name: Build
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -54,3 +58,34 @@ jobs:
           name: PCL-Steam-Link-Release
           path: dist\**
           if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/Plain Craft Launcher 2.exe
+            说明.md
+            README.md
+          body: |
+            ## PCL Steam 联机修改版 ${{ github.ref_name }}
+
+            基于 [Meloong-Git/PCL](https://github.com/Meloong-Git/PCL) 2.13.1.1 的第三方修改版，
+            把原本需要 EasyTier 的「联机」页改成通过 **Steam 网络（SteamNetworkingSockets）** 转发，
+            不需要任何公网服务器或中继账号。
+
+            ### 怎么用
+            1. 双方都装好 Steam 客户端并登录、互为 Steam 好友。
+            2. 房主在 PCL 里启动游戏 → 进入单人存档 →「对局域网开放」→ 记下端口（如 25565）。
+            3. PCL 里点「联机」→「创建房间」→ 输入刚才的端口 → 得到房间号（17 位数字）。
+            4. 加入方 PCL 里点「联机」→「加入房间」→ 填房间号 → 启动游戏 → 多人游戏 → 直连 `localhost:8888`。
+
+            ### 注意
+            - 主程序是 .NET Framework 4.8 桌面程序，联机模块 PCLink 是自包含单文件，无需另装 .NET。
+            - 本修改版与 PCL 官方无关；许可遵循仓库内 `LICENCE`（PCL 分发有限许可）。
+            - Steam 联机依赖 Steam 官方 P2P 中继，网络质量受 Steam 影响。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

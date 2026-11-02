@@ -8,6 +8,10 @@
 一个能**双人开黑玩 Minecraft** 的 PCL 启动器改版：不需要公网 IP、不需要内网穿透、不需要自己搭中继服务器，
 只要两台电脑都装了 Steam 并互为好友，就能把「单人游戏 → 对局域网开放」的房间变成可以远程加入的房间。
 
+**直接下载**：到 [Releases](https://github.com/chyyyyyyyyyyyyyyyyyy/PCL-Steam-Link/releases) 下最新的
+`Plain Craft Launcher 2.exe`，替换掉你原来的 PCL 主程序即可（也可以放在单独文件夹里，它会自己读
+`%APPDATA%\.minecraft`，游戏版本 / 存档 / 配置全部沿用）。
+
 ---
 
 ## 为什么做这个
