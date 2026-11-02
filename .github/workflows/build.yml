@@ -1,0 +1,56 @@
+name: Build
+
+# 构建「PCL Steam 联机修改版」：先编译 Steam 联机模块 PCLink，再嵌入主程序并打包。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (Release)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Publish PCLink (Steam link module)
+        run: |
+          dotnet publish PCLink\PCLink.csproj -c Release -o out-pclink
+          Copy-Item out-pclink\PCLink.exe "Plain Craft Launcher 2\Resources\PCLink.exe" -Force
+
+      - name: Restore NuGet Packages
+        run: dotnet restore PCLCS\PCLCS.csproj
+
+      - name: Build launcher
+        run: msbuild "Plain Craft Launcher 2.sln" -p:Configuration=Release -p:MSBuildEnableWorkloadResolver=false -m
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item "Plain Craft Launcher 2\bin\Plain Craft Launcher 2.exe" dist\ -Force
+          Copy-Item "PCLink\steam_appid.txt" dist\ -Force -ErrorAction SilentlyContinue
+          if (Test-Path "说明.md") { Copy-Item "说明.md" dist\ -Force }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PCL-Steam-Link-Release
+          path: dist\**
+          if-no-files-found: error
