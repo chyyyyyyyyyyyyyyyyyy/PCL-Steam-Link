@@ -12,6 +12,9 @@
 `Plain Craft Launcher 2.exe`，替换掉你原来的 PCL 主程序即可（也可以放在单独文件夹里，它会自己读
 `%APPDATA%\.minecraft`，游戏版本 / 存档 / 配置全部沿用）。
 
+> Releases 里的构建由 GitHub Actions 自动产出；如果 Actions 队列还没跑完，也可以直接下载仓库里预编译好的
+> [`download/Plain Craft Launcher 2.exe`](https://github.com/chyyyyyyyyyyyyyyyyyy/PCL-Steam-Link/raw/main/download/Plain%20Craft%20Launcher%202.exe)（同一份文件）。
+
 ---
 
 ## 为什么做这个
