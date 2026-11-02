@@ -33,6 +33,21 @@ jobs:
         with:
           msbuild-architecture: x64
 
+      - name: Update Help
+        shell: pwsh
+        run: |
+          # PCL 的帮助文档（Resources\Help.zip）不在源码仓库里，上游 CI 也是临时生成
+          Set-Location ..
+          git clone https://github.com/LTCatt/PCL2Help.git -b master --single-branch --depth 1
+          Set-Location PCL2Help
+          Get-ChildItem -Force | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force
+          Compress-Archive -Path .\* -DestinationPath .\Help.zip -Force
+          Copy-Item -Path .\Help.zip -Destination "${{ github.workspace }}\Plain Craft Launcher 2\Resources\Help.zip" -Force
+          Set-Location ..
+          Remove-Item PCL2Help -Recurse -Force
+          Set-Location "${{ github.workspace }}"
+          Get-Item "Plain Craft Launcher 2\Resources\Help.zip" | Select-Object Name, Length
+
       - name: Publish PCLink (Steam link module)
         run: |
           dotnet publish PCLink\PCLink.csproj -c Release -o out-pclink
