@@ -110,5 +110,11 @@ jobs:
             - 主程序是 .NET Framework 4.8 桌面程序，联机模块 PCLink 是自包含单文件，无需另装 .NET。
             - 本修改版与 PCL 官方无关；许可遵循仓库内 `LICENCE`（PCL 分发有限许可）。
             - Steam 联机依赖 Steam 官方 P2P 中继，网络质量受 Steam 影响。
+
+            ### 联机模块的出处
+            转发模型参考自开源项目 **[connecttool-qt](https://github.com/moeleak/connecttool-qt)**（作者 **Ji Fuyao**，
+            MIT 许可，Copyright (c) 2025 Ji Fuyao）：它用 Steam 网络（`SteamNetworkingSockets`）做 TCP 转发 / TUN 组网。
+            本项目的 `PCLink` 是按此思路用 C# + [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) 重写的实现
+            （未复制其源码），并补充了 `host` / `join` / `selftest` 命令行接口供启动器调用。
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

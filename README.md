@@ -23,7 +23,10 @@ PCL 官方版本的「联机」页依赖作者的私有服务器配置和 EasyTi
 （配置拉取被拦截、节点 API 不可用）。这个改版把联机后端换成了 **Steam 网络（SteamNetworkingSockets）**：
 利用 Steam 自带的 P2P / 中继网络做端口转发，从而免去服务器成本，也不依赖任何第三方中继服务。
 
-思路参考了 [moeleak/connecttool-qt](https://github.com/moeleak/connecttool-qt)（同样基于 Steam 网络做 TCP 转发）。
+联机模块的实现思路来自 **[moeleak/connecttool-qt](https://github.com/moeleak/connecttool-qt)**（作者 **Ji Fuyao**，MIT 许可，
+本仓库参考的版本为 `1.6.0`，commit `7a2d7aa`）——它用 Steam 网络（`SteamNetworkingSockets`）做 TCP 转发 / 类 Tailscale 的
+TUN 异地组网。本项目的 `PCLink` 是按这套「Steam P2P + 本地 TCP 监听」的思路用 **C# / Steamworks.NET 重新实现**的，
+**没有复制它的 C++ / Qt 源码**（原项目只有 QML 图形界面，没有命令行接口，无法直接被启动器驱动）。署名与许可见下文「许可与署名」。
 
 ## 功能
 
@@ -110,6 +113,31 @@ msbuild "Plain Craft Launcher 2.sln" /p:Configuration=Release /p:MSBuildEnableWo
 - `PCLink.exe join --host <房主 SteamID> --port <本地监听端口>`：作为加入方，本地开 TCP 监听，把连接转发给房主。
 - `PCLink.exe selftest`：本地回环自测（不需要 Steam，用于验证转发链路是否正常）。
 
+## 联机模块的参考实现：connecttool-qt
+
+本项目的「联机」不是从零发明的，转发模型直接参考了下面这个开源项目：
+
+| 项目 | 作者 | 许可 | 链接 | 用途 |
+| --- | --- | --- | --- | --- |
+| **connecttool-qt** | **Ji Fuyao**（GitHub: [moeleak](https://github.com/moeleak)） | **MIT**（Copyright (c) 2025 Ji Fuyao） | https://github.com/moeleak/connecttool-qt | 用 Steam 网络（`SteamNetworkingSockets`）做 TCP 转发 / TUN 异地组网的**原始图形化工具**（Qt 6.11 + C++23） |
+
+参考到的具体做法：
+
+1. **用 Steam 网络当传输层**：`SteamAPI.Init()` 之后用 `CreateListenSocketP2P` / `ConnectP2P` 建立好友间 P2P 连接，
+   Steam 自带打洞与中继（SDR），所以双方都不需要公网 IP。
+2. **房主只当「网关」**：房主侧接受 Steam 连接后，把字节转发到本机正在监听的游戏端口
+   （也就是「对局域网开放」的那个端口），自己不需要本地监听。
+3. **加入方在本地开监听**：加入方在 `127.0.0.1:<端口>` 上跑 `TcpListener`，把 Minecraft 客户端连进来的字节
+   经 Steam 连接交给房主——所以游戏里「直连 `localhost:<端口>`」就能进房间。
+4. **AppID 480（Spacewar）**：不需要上架 Steamworks 后台，本地 `steam_appid.txt` 写 `480` 即可，双方必须已登录 Steam 且互为好友。
+
+差异：connecttool-qt 是 Qt/QML 桌面程序（TCP 转发 + TUN 两种模式），没有命令行/无头接口，无法被 PCL 当后端调用；
+因此本项目用 C# + [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) 重写了同一个转发模型，
+并额外提供 `host` / `join` / `selftest` 三个命令给启动器驱动。**未复制 connecttool-qt 的源代码**。
+
+> ⚠️ connecttool-qt 的 README 也提示过：这类「把 Steam 网络当内网穿透用」的做法，理论上存在被 Steam 判定为滥用
+> 而封禁账号的风险（作者建议用小号）。本项目沿用该风险提示，使用前请自行评估。
+
 ## 许可与署名
 
 - **PCL 本体**：版权归 **龙腾猫跃 (LTCatt)**。本仓库继续沿用上游的 [`LICENCE`](LICENCE)（《PCL 分发有限许可》
@@ -120,7 +148,9 @@ msbuild "Plain Craft Launcher 2.sln" /p:Configuration=Release /p:MSBuildEnableWo
   为了构建方便此处直接内置源码，许可证见 `MeloongCore/LICENSE.txt`。
 - **Steamworks.NET**：NuGet 包 `Steamworks.NET 2024.8.0`，MIT 许可。`steam_api64.dll` 版权归 Valve，
   按 Steamworks SDK 的可再分发条款使用。
-- **Steam 网络思路参考**：[moeleak/connecttool-qt](https://github.com/moeleak/connecttool-qt)（MIT）。
+- **联机模块的参考实现 [moeleak/connecttool-qt](https://github.com/moeleak/connecttool-qt)**：
+  Copyright (c) 2025 **Ji Fuyao**，**MIT License**。本项目的 Steam 转发模型（Steam P2P + 本地 TCP 监听 + 房主转发到游戏端口）
+  参考自该项目；本项目代码为独立重写，未包含其源码，此处按 MIT 要求保留版权与许可声明。
 - `PCLink/` 目录内的代码为本项目新增。
 
 ## 免责声明
