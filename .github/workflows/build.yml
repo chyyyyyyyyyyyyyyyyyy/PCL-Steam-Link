@@ -36,17 +36,22 @@ jobs:
       - name: Update Help
         shell: pwsh
         run: |
-          # PCL 的帮助文档（Resources\Help.zip）不在源码仓库里，上游 CI 也是临时生成
-          Set-Location ..
-          git clone https://github.com/LTCatt/PCL2Help.git -b master --single-branch --depth 1
-          Set-Location PCL2Help
-          Get-ChildItem -Force | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force
-          Compress-Archive -Path .\* -DestinationPath .\Help.zip -Force
-          Copy-Item -Path .\Help.zip -Destination "${{ github.workspace }}\Plain Craft Launcher 2\Resources\Help.zip" -Force
-          Set-Location ..
-          Remove-Item PCL2Help -Recurse -Force
-          Set-Location "${{ github.workspace }}"
-          Get-Item "Plain Craft Launcher 2\Resources\Help.zip" | Select-Object Name, Length
+          # PCL 的帮助文档（Resources\Help.zip）不在源码仓库里，上游 CI 也是从 PCL2Help 临时生成。
+          # 只打包“非点号开头”的顶层目录（Minecraft / 帮助 / 指南 / 百科 / 启动器 / 个性化），跳过 .git、README、LICENSE。
+          $ErrorActionPreference = 'Stop'
+          $ws = "${{ github.workspace }}"
+          $parent = Split-Path -Parent $ws
+          git clone https://github.com/LTCatt/PCL2Help.git -b master --single-branch --depth 1 (Join-Path $parent 'PCL2Help')
+          if ($LASTEXITCODE -ne 0) { throw "clone PCL2Help failed" }
+          $helpDir = Join-Path $parent 'PCL2Help'
+          $items = Get-ChildItem -Path $helpDir -Directory -Force | Where-Object { $_.Name -notlike '.*' }
+          if (-not $items) { throw "PCL2Help has no help directories" }
+          $items | ForEach-Object { "  - $($_.Name)" }
+          $zipPath = Join-Path $helpDir 'Help.zip'
+          Compress-Archive -Path $items.FullName -DestinationPath $zipPath -Force
+          Copy-Item -Path $zipPath -Destination (Join-Path $ws 'Plain Craft Launcher 2\Resources\Help.zip') -Force
+          Remove-Item $helpDir -Recurse -Force
+          Get-Item (Join-Path $ws 'Plain Craft Launcher 2\Resources\Help.zip') | Select-Object Name, Length
 
       - name: Publish PCLink (Steam link module)
         run: |
